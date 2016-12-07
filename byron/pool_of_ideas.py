@@ -1,15 +1,15 @@
 from nltk import wordnet
 
 class pool_of_ideas(object):
-	"""docstring for pool_of_ideas"""
 	def __init__(self):
 		super(pool_of_ideas, self).__init__()
 		self.nouns = []
 		self.adjectives = []
 		self.verbs = []
 		self.comparisons = {}
-		self.hypernyms = []
-		self.antonyms = []
+		self.hypernyms = {}
+		self.antonyms = {}
+		self.synonyms = {}
 		self.emtotional_words = []
 		self.phrases = []
 		self.poem_draft = []
@@ -58,3 +58,43 @@ class pool_of_ideas(object):
 						self.comparisons[a[0]][a[1]] = 1
 				else: #if dict doensn't have adjective
 					self.comparisons[a[0]] = {a[1]: 1}
+
+	def add_synonym(self,list,single=False):
+		'''
+		assumes that a redundancy check has already been completed.
+		input: (key,word)
+		storage: {key, [word, ...]}
+		'''
+		if single:
+			if self.synonyms.has_key(list[0]): #check if word exists
+				if list[1] not in self.synonyms[list[0]]: #check if synonym already exists for word
+					self.synonyms[list[0]].append(list[1]) #if not, add synonym
+			else:
+				self.synonyms[list[0]] = [list[1]]
+		else:
+			for a in list:
+				if self.synonyms.has_key(a[0]): #check if word exists
+					if a[1] not in self.synonyms[a[0]]: #check if synonym already exists for word
+						self.synonyms[a[0]].append(a[1]) #if not, add synonym
+				else:
+					self.synonyms[a[0]] = [a[1]]
+
+	def add_antonym(self,list,single=False):
+		'''
+		assumes that a redundancy check has already been completed.
+		input: (key,word)
+		storage: {key, [word, ...]}
+		'''
+		if single:
+			if self.antonyms.has_key(list[0]): #check if word exists
+				if list[1] not in self.antonyms[list[0]]: #check if synonym already exists for word
+					self.antonyms[list[0]].append(list[1]) #if not, add synonym
+			else:
+				self.antonyms[list[0]] = [list[1]]
+		else:
+			for a in list:
+				if self.antonyms.has_key(a[0]): #check if word exists
+					if a[1] not in self.antonyms[a[0]]: #check if synonym already exists for word
+						self.antonyms[a[0]].append(a[1]) #if not, add synonym
+				else:
+					self.antonyms[a[0]] = [a[1]]

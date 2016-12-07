@@ -1,7 +1,6 @@
 import nltk, string
 
 class analyzing_expert(object):
-	"""docstring for analyzing_expert"""
 	def __init__(self):
 		super(analyzing_expert, self).__init__()
 		
@@ -42,6 +41,5 @@ class analyzing_expert(object):
 				if sent[i][1][0:2] == "JJ" and sent[i+1][1][0:2] == 'NN':
 					bb.poi.add_comparison((sent[i][0],sent[i+1][0]),True)
 
-		print bb.poi.comparisons
 
 

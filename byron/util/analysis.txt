@@ -1,0 +1,110 @@
+Timer unit: 1e-06 s
+
+Total time: 12.4913 s
+File: decode.py
+Function: load_from_file at line 70
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+    70                                           @profile
+    71                                           def load_from_file(filetype,path):
+    72                                           	'''
+    73                                           	filetype of the files wising to be opened.
+    74                                           	path leads to the folder that contains the files wishing to be opened.
+    75                                           	'''
+    76         1            4      4.0      0.0  	pth = path + '*.' + filetype
+    77         1        43829  43829.0      0.4  	files = glob.glob(pth)
+    78                                           
+    79         1            1      1.0      0.0  	data = {}
+    80                                           
+    81         1            0      0.0      0.0  	i = 1
+    82         1            1      1.0      0.0  	f_num = len(files)
+    83         1         3170   3170.0      0.0  	random.shuffle(files)
+    84      3387         2865      0.8      0.0  	for f in files[:]:
+    85      3386        21442      6.3      0.2  		sys.stdout.write("\rLoading %i of %i..." % (i, f_num))
+    86      3386        22499      6.6      0.2  		sys.stdout.flush()
+    87      3386         6774      2.0      0.1  		idx = f[len(path):-len(filetype)-1]
+    88      3386         2529      0.7      0.0  		if filetype == 'poem':
+    89                                           			data[idx] = open(f,'rb').read()
+    90                                           		else:
+    91      3386     12382818   3657.1     99.1  			data[idx] = cPickle.load(open(f,'rb'))
+    92      3386         5380      1.6      0.0  		i += 1
+    93         1           23     23.0      0.0  	print
+    94         1            1      1.0      0.0  	return data
+
+Total time: 47.6187 s
+File: decode.py
+Function: tf_idf at line 103
+
+Line #      Hits         Time  Per Hit   % Time  Line Contents
+==============================================================
+   103                                           @profile
+   104                                           def tf_idf(docs):
+   105                                           	'''
+   106                                           	docs must be the tokenized documents loaded from load_from_file()
+   107                                           	'''
+   108         1            2      2.0      0.0  	punct = string.punctuation
+   109         1           89     89.0      0.0  	a = docs.values()
+   110   7175121      5459416      0.8     11.5  	words = sorted(set([word for doc in a for sent in doc for word in sent]))
+   111         1            5      5.0      0.0  	dictionary = {}
+   112         1            1      1.0      0.0  	dictionary_reversed = {}
+   113         1            1      1.0      0.0  	i = 0
+   114    155617       116053      0.7      0.2  	for word in words:
+   115    155616       127021      0.8      0.3  		dictionary[word] = i
+   116    155616       113670      0.7      0.2  		dictionary_reversed[i] = word
+   117    155616       101003      0.6      0.2  		i += 1
+   118                                           	
+   119         1           96     96.0      0.0  	keys = docs.keys()
+   120         1            1      1.0      0.0  	idx = 1
+   121         1            2      2.0      0.0  	f_num = len(keys)
+   122      3387         3054      0.9      0.0  	for key in keys:
+   123      3386        16614      4.9      0.0  		sys.stdout.write("\rEncoding document %i of %i..." % (idx, f_num))
+   124      3386        17843      5.3      0.0  		sys.stdout.flush()
+   125      3386         3790      1.1      0.0  		idx += 1
+   126   7175120      6830976      1.0     14.3  		docs[key] = [[dictionary[word] for word in sent] for sent in docs[key]]
+   127                                           		# this = [one_hot(dictionary[word],word_count) for sent in this for word in sent]
+   128         1            7      7.0      0.0  	print
+   129                                           
+   130         1            2      2.0      0.0  	tf_doc = {}
+   131         1            1      1.0      0.0  	idf = {}
+   132         1            0      0.0      0.0  	idx = 1
+   133         1            2      2.0      0.0  	f_num = len(keys)
+   134      3387         3462      1.0      0.0  	for key in keys:
+   135      3386        19039      5.6      0.0  		sys.stdout.write("\rtf-idf of document %i of %i..." % (idx, f_num))
+   136      3386        20783      6.1      0.0  		sys.stdout.flush()
+   137      3386         4289      1.3      0.0  		idx += 1
+   138      3386         5351      1.6      0.0  		word_count = 0
+   139      3386         3596      1.1      0.0  		this = docs[key]
+   140      3386         4320      1.3      0.0  		tf = {}
+   141      3386        23238      6.9      0.0  		uniques = set([])
+   142                                           		
+   143    281361       206116      0.7      0.4  		for sent in this:
+   144   7171734      5162417      0.7     10.8  			for word in sent:
+   145                                           				
+   146   6893759      5136308      0.7     10.8  				if word not in uniques:
+   147   1200825      1032514      0.9      2.2  					uniques.add(word)
+   148   1200825      1081313      0.9      2.3  					if idf.has_key(word):
+   149   1045209       872780      0.8      1.8  						idf[word] += 1
+   150                                           					else:
+   151    155616       124696      0.8      0.3  						idf[word] = 1
+   152                                           
+   153   6893759      4986035      0.7     10.5  				word_count += 1
+   154   6893759      5624695      0.8     11.8  				if tf.has_key(word):
+   155   5692934      4507897      0.8      9.5  					tf[word] += 1
+   156                                           				else:
+   157   1200825      1000677      0.8      2.1  					tf[word] = 1
+   158                                           		
+   159   1204211       902664      0.7      1.9  		for t in tf.keys():
+   160   1200825      1603232      1.3      3.4  			tf[t] = float(tf[t]+1)/float(word_count+len(uniques))
+   161      3386         3306      1.0      0.0  		tf_doc[key] = tf
+   162         1            7      7.0      0.0  	print
+   163                                           
+   164         1            2      2.0      0.0  	tfidf = {}
+   165      3387         3433      1.0      0.0  	for key in keys:
+   166   1204211       882352      0.7      1.9  		for t in tf_doc[key].keys():
+   167   1200825      1611528      1.3      3.4  			tf_doc[key][t] = tf_doc[key][t]/float(math.log(idf[t]+1))
+   168                                           
+   169      3386         3029      0.9      0.0  		tfidf[key] = tf_doc[key]
+   170                                           
+   171         1            1      1.0      0.0  	return tfidf
+

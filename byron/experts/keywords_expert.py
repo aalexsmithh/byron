@@ -40,7 +40,7 @@ class keywords_expert(object):
 		
 		bb.key_phrases = NPs
 
-		for kp in bb.key_phrases: #find which has highest inspiration score
+		# for kp in bb.key_phrases: #find which has highest inspiration score
 			
 
 		print bb.key_phrases

@@ -1,10 +1,12 @@
-class template(object):
+class doc_template(object):
 	"""docstring for template"""
 	def __init__(self):
-		super(template, self).__init__()
+		super(doc_template, self).__init__()
 		self.pos = []
 		self.token = []
 		self.tfidf = []
+		self.idf = []
+		self.template = []
 
 	def add_raw(self,raw):
 		for sent in raw:
@@ -16,10 +18,52 @@ class template(object):
 			self.pos.append(sent_pos)
 			self.token.append(sent_raw)
 
-	def add_tfidf(tfidf_dict):
+	def add_tfidf(self,tfidf_dict):
 		for sent in self.token:
 			tfidf_sent = []
 			for word in sent:
-				tfidf_sent.append(tfidf_dict[word])
+				try:
+					tfidf_sent.append(tfidf_dict[word])
+				except KeyError, e:
+					tfidf_sent.append(float(0))
 			self.tfidf.append(tfidf_sent)
+
+	def add_idf(self,idf_dict):
+		for sent in self.token:
+			idf_sent = []
+			for word in sent:
+				try:
+					idf_sent.append(idf_dict[word])
+				except KeyError, e:
+					idf_sent.append(float(0))
+			self.idf.append(idf_sent)
+
+	def make_template(self, threshold = 4):
+		for i,sent in enumerate(self.token):
+			sent_template = []
+			for j,word in enumerate(sent):
+				if self.idf[i][j] > threshold:
+					sent_template.append('X')
+				else:
+					sent_template.append(word)
+			self.template.append(sent_template)
+
+	def make_sent_template(self,sent_idx):
+		a = sentence_template()
+		a.add_pos(self.pos[sent_idx])
+		a.add_template(self.template[sent_idx])
+		return a
+
+class sentence_template(object):
+	"""docstring for template"""
+	def __init__(self):
+		super(sentence_template, self).__init__()
+		self.pos = []
+		self.template = []
+
+	def add_pos(self,pos_sent):
+		self.pos = pos_sent
 		
+	def add_template(self,template_sent):
+		self.template = template_sent
+

@@ -68,7 +68,7 @@ def pos_tag_poems():
 	print
 
 # @profile
-def load_from_file(filetype,path):
+def load_from_file(filetype,path,num_files=None):
 	'''
 	filetype of the files wising to be opened.
 	path leads to the folder that contains the files wishing to be opened.
@@ -78,10 +78,12 @@ def load_from_file(filetype,path):
 
 	data = {}
 
+	if num_files is None:
+		num_files = len(files)
 	i = 1
-	f_num = len(files)
+	f_num = num_files
 	random.shuffle(files)
-	for f in files[:]:
+	for f in files[:num_files]:
 		sys.stdout.write("\rLoading %i of %i..." % (i, f_num))
 		sys.stdout.flush()
 		idx = f[len(path):-len(filetype)-1]
@@ -117,15 +119,15 @@ def tf_idf(docs):
 		i += 1
 	
 	keys = docs.keys()
-	idx = 1
-	f_num = len(keys)
-	for key in keys:
-		sys.stdout.write("\rEncoding document %i of %i..." % (idx, f_num))
-		sys.stdout.flush()
-		idx += 1
-		docs[key] = [[dictionary[word] for word in sent] for sent in docs[key]]
-		# this = [one_hot(dictionary[word],word_count) for sent in this for word in sent]
-	print
+	# idx = 1
+	# f_num = len(keys)
+	# for key in keys:
+	# 	sys.stdout.write("\rEncoding document %i of %i..." % (idx, f_num))
+	# 	sys.stdout.flush()
+	# 	idx += 1
+	# 	docs[key] = [[dictionary[word] for word in sent] for sent in docs[key]]
+	# 	# this = [one_hot(dictionary[word],word_count) for sent in this for word in sent]
+	# print
 
 	tf_doc = {}
 	idf = {}
@@ -161,10 +163,14 @@ def tf_idf(docs):
 		tf_doc[key] = tf
 	print
 
+	for df in idf.keys():
+		idf[df] = float(len(keys))/float(idf[df])
+
 	tfidf = {}
 	for key in keys:
 		for t in tf_doc[key].keys():
-			tf_doc[key][t] = tf_doc[key][t]/float(math.log(idf[t]+1))
+			# tf_doc[key][t] = tf_doc[key][t]/float(math.log(idf[t]))
+			tf_doc[key][t] = idf[t]
 
 		tfidf[key] = tf_doc[key]
 
@@ -213,7 +219,7 @@ def process_input(text):
 if __name__ == '__main__':
 	d = load_from_file('token','../../hide/poems/encoded/')
 	a = tf_idf(d)
-	f = open('poems.tfidf','wb')
+	f = open('idf.tfidf','wb')
 	cPickle.dump(a,f)
 	f.close()
 

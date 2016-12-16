@@ -1,6 +1,8 @@
 import numpy as np
 from multiprocessing.pool import ThreadPool
 import multiprocessing, Queue
+from byron.util.node import node
+import random
 
 def word_count(docs_dict):
 	count = 0
@@ -75,64 +77,67 @@ def bigram(flat_text,w1,w2,verbose=0):
 				count += 1
 	return count
 
-def multithread_trigram_p(w1,w2,w3,flat_text,delta=1e-8):
-	# pool = ThreadPool(processes=5)
+def make_nodes(docs, ):
+	pass
+
+
+def multithread_trigram_p(w1,w2,w3,flat_text,delta=1e-8,with_pos=False):
 	processes = []
+
+	if with_pos:
+		target_method = _thread_trigram_p_pos
+	else:
+		target_method = _thread_trigram_p
 
 	idx = [0, int(0.20*len(w3)), int(0.40*len(w3)), int(0.60*len(w3)), int(0.80*len(w3)),len(w3)]
 	#processes
 	manager = multiprocessing.Manager()
 	return_dict = manager.dict()
-	t1 = multiprocessing.Process(target=_thread_trigram_p,args=(w1,w2,w3[idx[0]:idx[1]],flat_text,delta,return_dict,"t1"))
+	t1 = multiprocessing.Process(target=target_method,args=(w1,w2,w3[idx[0]:idx[1]],flat_text,delta,return_dict,"t1"))
 	processes.append(t1)
 	t1.start()
-	t2 = multiprocessing.Process(target=_thread_trigram_p,args=(w1,w2,w3[idx[1]:idx[2]],flat_text,delta,return_dict,"t2"))
+	t2 = multiprocessing.Process(target=target_method,args=(w1,w2,w3[idx[1]:idx[2]],flat_text,delta,return_dict,"t2"))
 	processes.append(t2)
 	t2.start()
-	t3 = multiprocessing.Process(target=_thread_trigram_p,args=(w1,w2,w3[idx[2]:idx[3]],flat_text,delta,return_dict,"t3"))
+	t3 = multiprocessing.Process(target=target_method,args=(w1,w2,w3[idx[2]:idx[3]],flat_text,delta,return_dict,"t3"))
 	processes.append(t3)
 	t3.start()
-	t4 = multiprocessing.Process(target=_thread_trigram_p,args=(w1,w2,w3[idx[3]:idx[4]],flat_text,delta,return_dict,"t4"))
+	t4 = multiprocessing.Process(target=target_method,args=(w1,w2,w3[idx[3]:idx[4]],flat_text,delta,return_dict,"t4"))
 	processes.append(t4)
 	t4.start()
-	t5 = multiprocessing.Process(target=_thread_trigram_p,args=(w1,w2,w3[idx[4]:idx[5]],flat_text,delta,return_dict,"t5"))
+	t5 = multiprocessing.Process(target=target_method,args=(w1,w2,w3[idx[4]:idx[5]],flat_text,delta,return_dict,"t5"))
 	processes.append(t5)
 	t5.start()
-
-	#threads
-	# t1 = pool.apply_async(_thread_trigram_p, (w1,w2,w3[idx[0]:idx[1]],flat_text,delta,t1_ret))
-	# t2 = pool.apply_async(_thread_trigram_p, (w1,w2,w3[idx[1]:idx[2]],flat_text,delta,t2_ret))
-	# t3 = pool.apply_async(_thread_trigram_p, (w1,w2,w3[idx[2]:idx[3]],flat_text,delta,t3_ret))
-	# t4 = pool.apply_async(_thread_trigram_p, (w1,w2,w3[idx[3]:idx[4]],flat_text,delta,t4_ret))
-	# t5 = pool.apply_async(_thread_trigram_p, (w1,w2,w3[idx[4]:idx[5]],flat_text,delta,t5_ret))
-	# t1_ret = t1.get()
-	# t2_ret = t2.get()
-	# t3_ret = t3.get()
-	# t4_ret = t4.get()
-	# t5_ret = t5.get()
 
 	for p in processes:
 		p.join()
 
-	for key in return_dict.keys():
-		print return_dict[key]
+	nodes = []
+	# for process in return_dict.keys():
+	# 	pass
 
 	print 'done'
+	return  return_dict
 
 	# print t1_ret, t2_ret, t3_ret, t4_ret, t5_ret
 
 
 def _thread_trigram_p(w1,w2,w3,flat_text,delta,out_q,pid):
-	print "starting thread"
-	p = []
+	p = {}
 	for w in w3:
-		p.append(trigram_p(w1,w2,w,flat_text,delta))
-		print 'got trigram'
+		p[w] = trigram_p(w1,w2,w,flat_text,delta)
 	# out_q.put(p)
-	out_q[pid] = p
+	# out_q[pid] = p
+	out_q.update(p)
 
+def _thread_trigram_p_pos(w1,w2,w3,flat_text,delta,out_q,pid):
+	p = {}
+	for w in w3:
+		p[w] = trigram_p_pos(w1,w2,w,flat_text,delta)
+	# out_q.put(p)
+	# out_q[pid] = p
+	out_q.update(p)
 
-# @profile
 def trigram_p(w1,w2,w3,flat_text, delta=None):
 	'''
 	w3 is a single word, w1 & w2 are lists of words to find trigrams for
@@ -143,11 +148,7 @@ def trigram_p(w1,w2,w3,flat_text, delta=None):
 	w2_set = set(w2)
 	stop = len(flat_text)-2
 
-	for i in xrange(flat_text.shape[0]):
-		# if flat_text[i] == w3:
-		# 	if flat_text[i-2] in w1_set:
-		# 		if flat_text[i-1] in w2_set:
-		# 			counts[w1.index(flat_text[i-2]),w2.index(flat_text[i-1])] += 1
+	for i in xrange(len(flat_text)):
 		if flat_text[i] in w1_set:
 			if i >= stop:
 				break
@@ -162,14 +163,75 @@ def trigram_p(w1,w2,w3,flat_text, delta=None):
 		for j in xrange(len(w2)):
 			p[i,j] = (float(tri_counts[i,j]) + float(delta)) / (float(bi_counts[i,j]) + bigram_smooth)
 
-	# c_123 = trigram(flat_text,w1,w2,w3)
-	# c_12 = bigram(flat_text,w1,w2)
-	# if delta is not None:
-	# 	c_123 = float(c_123) + delta
-	# 	c_12 = float(c_12) + float(delta)*float(len(flat_text) + len(flat_text)**2)
-	# return float(c_123)/float(c_12)
+	return p
+
+def trigram_p_pos(w1,w2,w3,flat_text, delta=None):
+	'''
+	w3 is a single word tuple with a pos tag in [1], w1 & w2 are lists of word tuples with pos tags to find trigrams for
+	flat_text must be the .pos files opened with the file opening method in decode.
+	'''
+	tri_counts = np.zeros((len(w1),len(w2)))
+	bi_counts = np.zeros((len(w1),len(w2)))
+	w1_set = set(w1)
+	w2_set = set(w2)
+	stop = len(flat_text)-2
+
+	for i in xrange(len(flat_text)):
+		if flat_text[i] in w1_set:
+			if i >= stop:
+				break
+			if flat_text[i+1] in w2_set:
+				if flat_text[i+2] == w3:
+					tri_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
+				bi_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
+
+	p = np.zeros((len(w1),len(w2)))
+	bigram_smooth = float(delta)*float(len(flat_text) + len(flat_text)**2)
+	for i in xrange(len(w1)):
+		for j in xrange(len(w2)):
+			p[i,j] = (float(tri_counts[i,j]) + float(delta)) / (float(bi_counts[i,j]) + bigram_smooth)
 
 	return p
+
+def get_words_with_tags(flat_text_pos,max_per_tag=[],tags=[],include_pos=False):
+	'''
+	flat_text must include tuples with each word's POS tag
+	'''
+	words = {}
+	for tag in tags:
+		words[tag] = set([])
+	for word in flat_text_pos:
+		if words.has_key(word[1]):
+			if include_pos:
+				words[word[1]].add(word)
+			else:
+				words[word[1]].add(word[0])
+	
+	if len(max_per_tag) == len(tags) and type(max_per_tag) == list:
+		try:
+			for i, mpt in enumerate(max_per_tag):
+				words[tags[i]] = random.sample(words[tags[i]],mpt)
+		except ValueError, e:
+			print 'Not enough values for %s, only giving %i words instead of %i.'%(tags[i], len(words[tags[i]]), mpt)
+			words[tags[i]] = words[tags[i]]
+			pass
+	else:
+		try:
+			for tag in tags:
+				words[tag] = random.sample(words[tag],max_per_tag)
+		except ValueError, e:
+			print 'Not enough values for %s, only giving %i words instead of %i.'%(tag, len(words[tag]), max_per_tag)
+			words[tag] = words[tag]
+			pass
+	
+	#flatten to list if include_pos is true
+	flat_words = []
+	for tag in tags:
+		for word in words[tag]:
+			flat_words.append(word)
+	words = flat_words
+
+	return words
 
 def random_word(docs,num_words=50):
 	'''
@@ -177,6 +239,8 @@ def random_word(docs,num_words=50):
 	'''
 	if type(docs) is dict:
 		text = flatten_text(docs)
+	elif type(docs) is np.ndarray:
+		raise TypeError("Input cannot be an numpy array.")
 	else:
 		text = docs
 	np.random.seed(1337)
@@ -186,10 +250,11 @@ def random_word(docs,num_words=50):
 		words.add(text[np.random.randint(0,length)])
 	return list(words)
 
-def flatten_text(text):
+def flatten_text(text,numpy=False):
 	'''
 	only takes a dict loaded by load_from_file in decode.py
 	'''
 	flat = [word for key in text.keys() for sent in text[key] for word in sent]
-	flat = np.asarray(flat, dtype="string_")
+	if numpy:
+		flat = np.asarray(flat, dtype="string_")
 	return flat

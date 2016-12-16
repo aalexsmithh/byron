@@ -60,10 +60,20 @@ class sentence_template(object):
 		super(sentence_template, self).__init__()
 		self.pos = []
 		self.template = []
+		self.force = []
+		self.length = 0
+
+	def __str__(self):
+		str_ret = ''
+		for i in xrange(self.length):
+			str_ret += '[%s %s]' % (self.template[i],self.pos[i])
+		return str_ret
 
 	def add_pos(self,pos_sent):
 		self.pos = pos_sent
+		self.length = len(pos_sent)
 		
 	def add_template(self,template_sent):
 		self.template = template_sent
+		self.length = len(template_sent)
 

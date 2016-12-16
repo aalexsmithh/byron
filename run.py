@@ -1,11 +1,6 @@
 from byron.blackboard import blackboard
-from nltk.corpus import treebank
-from nltk import treetransforms
-from nltk import induce_pcfg
-from nltk.parse import pchart
-from nltk import nonterminals, Production#, parse_pcfg
-from nltk import PCFG
-from byron.util.make_templates import *
+import random
+from byron.experts.sentence_expert import *
 from byron.util.util import *
 
 def main():
@@ -23,59 +18,15 @@ def main():
 	# insp2 = "Testing the large System. this is Downright Crazy, Insane, and absurd!"
 	# a = blackboard(insp)
 	# a.run()
-	# templates = make_template(20,2)
-	# templates = prune_templates(templates)
-	
-	docs = load_from_file('token','hide/poems/encoded/', num_files=None)
-	flat_text = flatten_text(docs)
 
-	w = random_word(flat_text)
-	p_s = np.zeros((len(w),len(w),len(w))).tolist()
-	
-	multithread_trigram_p(w,w,w,flat_text)
+	docs_token = load_from_file('token','hide/poems/encoded/', num_files=None)
+	docs_pos = load_from_file('pos','hide/poems/encoded/', num_files=None)
+	docs_pos_flat = flatten_text(docs_pos)
+	docs_token_flat = flatten_text(docs_token)
+	templates = make_template(docs_pos,None,20,2,True)
 
-	# print trigram_p('world','and','all',flat_text, 1e-8)
-	# bigram(flat_text,'and','all')
-
-
-def test():
-
-	toy_pcfg1 = parse_pcfg("""
-		S -> NP VP [1.0]
-		NP -> Det N [0.5] | NP PP [0.25] | 'John' [0.1] | 'I' [0.15]
-		Det -> 'the' [0.8] | 'my' [0.2]
-		N -> 'man' [0.5] | 'telescope' [0.5]
-		VP -> VP PP [0.1] | V NP [0.7] | V [0.2]
-		V -> 'ate' [0.35] | 'saw' [0.65]
-		PP -> P NP [1.0]
-		P -> 'with' [0.61] | 'under' [0.39]
-		""")
-
-	pcfg_prods = toy_pcfg1.productions()
-
-	pcfg_prod = pcfg_prods[2]
-	print 'A PCFG production:', `pcfg_prod`
-	print '    pcfg_prod.lhs()  =>', `pcfg_prod.lhs()`
-	print '    pcfg_prod.rhs()  =>', `pcfg_prod.rhs()`
-	print '    pcfg_prod.prob() =>', `pcfg_prod.prob()`
-	print
-
-	# extract productions from three trees and induce the PCFG
-	print "Induce PCFG grammar from treebank data:"
-
-	productions = []
-	for item in treebank.items[:2]:
-		for tree in treebank.parsed_sents(item):
-			# perform optional tree transformations, e.g.:
-			tree.collapse_unary(collapsePOS = False)    # Remove branches A-B-C into A-B+C
-			tree.chomsky_normal_form(horzMarkov = 2)    # Remove A->(B,C,D) into A->B,C+D->D
-
-			productions += tree.productions()
-
-	S = Nonterminal('S')
-	grammar = induce_pcfg(S, productions)
-	print grammar
-	print
+	a = sentence_expert(docs_token, docs_pos, docs_pos_flat, docs_token_flat, templates)
+	a.run()
 
 if __name__ == '__main__':
 	main()

@@ -11,10 +11,12 @@ def _template_from_doc(doc,idf,tfidf):
 	a.make_template()
 	return a
 
-def make_template(max_len=15, min_X=3):
+def make_template(docs,max_files=None ,max_len=15, min_X=3, prune=True):
+	'''
+	docs must be the .pos files
+	'''
 	idf = cPickle.load(open('hide/idf.tfidf'))
 	tfidf = cPickle.load(open('hide/byword.tfidf'))
-	docs = load_from_file('pos','hide/poems/encoded/', num_files=1000)
 
 	templates = []
 
@@ -34,6 +36,8 @@ def make_template(max_len=15, min_X=3):
 					parsed_templates.append(t.make_sent_template(i))
 	print
 	
+	if prune:
+		parsed_templates = prune_templates(parsed_templates)
 	return parsed_templates
 
 def prune_templates(templates):
@@ -61,7 +65,8 @@ def prune_templates(templates):
 			pruned.append(templates[i])
 	print
 
-	print len(templates), 'to', len(pruned)
+	print '\rRemoved %i templates in pruning operation...' % (len(templates) - len(pruned))
+	return pruned
 
 
 def main():

@@ -1,5 +1,6 @@
 from byron.util.make_templates import *
 from byron.util.util import *
+import numpy as np
 
 class sentence_expert(object):
 	def __init__(self, token, pos, pos_flat, token_flat, template):
@@ -10,10 +11,12 @@ class sentence_expert(object):
 		self.docs_pos = pos
 		self.docs_pos_flat = pos_flat
 		self.docs_token_flat = token_flat
-		self.templates = template
+		self.template = template
+		self.p = None
+		self.V = None
 		
 	def run(self):		
-		rng = random.SystemRandom()
+		
 
 		# pos_tags = set([])
 		# docs_token = load_from_file('token','hide/poems/encoded/', num_files=None)
@@ -22,17 +25,14 @@ class sentence_expert(object):
 		# docs_token_flat = flatten_text(docs_token)
 
 		# templates = make_template(self.docs_pos,None,20,2,True)
-		sent_temp = self.templates[rng.randint(0, len(templates))]
-		print sent_temp
 
+		print self.template
 		#list of nodes with their pos tags
-		subcorpus = self.get_subcorpus_for_template(self.docs_pos_flat,sent_temp)
+		self.subcorpus = self.get_subcorpus_for_template(self.docs_pos_flat,self.template,5)
 
-		# print subcorpus
-
-		# print word_pos['VBZ']
-
-		multithread_trigram_p(subcorpus,subcorpus,subcorpus,self.docs_pos_flat,with_pos=True)
+		self.p = multithread_trigram_p(self.subcorpus,self.subcorpus,self.subcorpus,self.docs_pos_flat,with_pos=True)
+		for word in self.p.keys()[0:10]:
+			print word, self.heuristic_cost(word,1,1)
 
 	def add_sentence(self,sent):
 		self.sentences.append(sent)
@@ -41,6 +41,12 @@ class sentence_expert(object):
 		'''
 		runs IDA* search to find some candidate sentence
 		'''
+
+
+	def heuristic_cost(self,word,idx,max_len):
+		# self.subcorpus indicates w1,w2 for each trigram
+		if idx == max_len:
+			return min([min(low) for low in self.p[word][:]]), max([max(low) for low in self.p[word][:]])
 
 	def get_subcorpus_for_template(self, docs, template, corp_mult=30):
 		'''
@@ -69,3 +75,16 @@ class sentence_expert(object):
 		words = get_words_with_tags(docs,counts,tags,True)
 
 		return words
+
+def make_sentence_experts(num_experts, token, pos, pos_flat, token_flat, template):
+	# rng = random.SystemRandom()
+	experts = []
+	for i in range(num_experts):
+		#make this random again
+		experts.append(sentence_expert(token, pos, pos_flat, token_flat, template[np.random.randint(0, len(template))]))
+		# experts.append(sentence_expert(token, pos, pos_flat, token_flat, template[rng.randint(0, len(template))]))
+	return experts
+
+def run_sentence_experts(experts):
+	for i in range(len(experts)):
+		experts[i].run()

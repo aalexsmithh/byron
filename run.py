@@ -19,14 +19,15 @@ def main():
 	# a = blackboard(insp)
 	# a.run()
 
-	docs_token = load_from_file('token','hide/poems/encoded/', num_files=None)
-	docs_pos = load_from_file('pos','hide/poems/encoded/', num_files=None)
+	max_files = 1000
+	docs_token = load_from_file('token','hide/poems/encoded/', num_files=max_files)
+	docs_pos = load_from_file('pos','hide/poems/encoded/', num_files=max_files)
 	docs_pos_flat = flatten_text(docs_pos)
 	docs_token_flat = flatten_text(docs_token)
 	templates = make_template(docs_pos,None,20,2,True)
 
-	a = sentence_expert(docs_token, docs_pos, docs_pos_flat, docs_token_flat, templates)
-	a.run()
+	a = make_sentence_experts(1,docs_token, docs_pos, docs_pos_flat, docs_token_flat, templates)
+	run_sentence_experts(a)
 
 if __name__ == '__main__':
 	main()

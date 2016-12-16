@@ -157,12 +157,17 @@ def trigram_p(w1,w2,w3,flat_text, delta=None):
 					tri_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
 				bi_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
 
+	ma, mi = -1.7976931348623157e+308,1.7976931348623157e+308
 	p = np.zeros((len(w1),len(w2)))
 	bigram_smooth = float(delta)*float(len(flat_text) + len(flat_text)**2)
 	for i in xrange(len(w1)):
 		for j in xrange(len(w2)):
 			p[i,j] = (float(tri_counts[i,j]) + float(delta)) / (float(bi_counts[i,j]) + bigram_smooth)
-
+			if p[i,j] > ma:
+				ma = p[i,j]
+			if p[i,j] < mi:
+				mi = p[i,j]
+	print 'max:', ma, 'min:', mi
 	return p
 
 def trigram_p_pos(w1,w2,w3,flat_text, delta=None):
@@ -185,12 +190,17 @@ def trigram_p_pos(w1,w2,w3,flat_text, delta=None):
 					tri_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
 				bi_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
 
+	ma, mi = -1.7976931348623157e+308,1.7976931348623157e+308
 	p = np.zeros((len(w1),len(w2)))
 	bigram_smooth = float(delta)*float(len(flat_text) + len(flat_text)**2)
 	for i in xrange(len(w1)):
 		for j in xrange(len(w2)):
 			p[i,j] = (float(tri_counts[i,j]) + float(delta)) / (float(bi_counts[i,j]) + bigram_smooth)
-
+			if p[i,j] > ma:
+				ma = p[i,j]
+			if p[i,j] < mi:
+				mi = p[i,j]
+	print 'max:', ma, 'min:', mi
 	return p
 
 def get_words_with_tags(flat_text_pos,max_per_tag=[],tags=[],include_pos=False):

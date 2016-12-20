@@ -2,7 +2,7 @@ import numpy as np
 from multiprocessing.pool import ThreadPool
 import multiprocessing, Queue
 from byron.util.node import node
-import random
+import random, sys
 
 def word_count(docs_dict):
 	count = 0
@@ -116,7 +116,7 @@ def multithread_trigram_p(w1,w2,w3,flat_text,delta=1e-8,with_pos=False):
 	# for process in return_dict.keys():
 	# 	pass
 
-	print 'done'
+	# print 'done'
 	return  return_dict
 
 	# print t1_ret, t2_ret, t3_ret, t4_ret, t5_ret
@@ -125,6 +125,7 @@ def multithread_trigram_p(w1,w2,w3,flat_text,delta=1e-8,with_pos=False):
 def _thread_trigram_p(w1,w2,w3,flat_text,delta,out_q,pid):
 	p = {}
 	for w in w3:
+		# print 'finding trigram_p for word %s,%s' % w
 		p[w] = trigram_p(w1,w2,w,flat_text,delta)
 	# out_q.put(p)
 	# out_q[pid] = p
@@ -133,6 +134,7 @@ def _thread_trigram_p(w1,w2,w3,flat_text,delta,out_q,pid):
 def _thread_trigram_p_pos(w1,w2,w3,flat_text,delta,out_q,pid):
 	p = {}
 	for w in w3:
+		# print 'finding trigram_p_pos for word %s,%s' % w
 		p[w] = trigram_p_pos(w1,w2,w,flat_text,delta)
 	# out_q.put(p)
 	# out_q[pid] = p
@@ -149,28 +151,30 @@ def trigram_p(w1,w2,w3,flat_text, delta=None):
 	stop = len(flat_text)-2
 
 	for i in xrange(len(flat_text)):
+		print flat_text[i],
 		if flat_text[i] in w1_set:
 			if i >= stop:
 				break
 			if flat_text[i+1] in w2_set:
-				if flat_text[i+2] == w3:
-					tri_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
 				bi_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
+				if flat_text[i+2] == w3:
+					print 'ft',
+					tri_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
 
-	ma, mi = -1.7976931348623157e+308,1.7976931348623157e+308
+	# ma, mi = -1.7976931348623157e+308,1.7976931348623157e+308
 	p = np.zeros((len(w1),len(w2)))
 	bigram_smooth = float(delta)*float(len(flat_text) + len(flat_text)**2)
 	for i in xrange(len(w1)):
 		for j in xrange(len(w2)):
 			p[i,j] = (float(tri_counts[i,j]) + float(delta)) / (float(bi_counts[i,j]) + bigram_smooth)
-			if p[i,j] > ma:
-				ma = p[i,j]
-			if p[i,j] < mi:
-				mi = p[i,j]
-	print 'max:', ma, 'min:', mi
+			# if p[i,j] > ma:
+			# 	ma = p[i,j]
+			# if p[i,j] < mi:
+			# 	mi = p[i,j]
+	# print 'max:', ma, 'min:', mi
 	return p
 
-def trigram_p_pos(w1,w2,w3,flat_text, delta=None):
+def trigram_p_pos(w1,w2,w3,flat_text,delta=None):
 	'''
 	w3 is a single word tuple with a pos tag in [1], w1 & w2 are lists of word tuples with pos tags to find trigrams for
 	flat_text must be the .pos files opened with the file opening method in decode.
@@ -186,24 +190,86 @@ def trigram_p_pos(w1,w2,w3,flat_text, delta=None):
 			if i >= stop:
 				break
 			if flat_text[i+1] in w2_set:
+				bi_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
 				if flat_text[i+2] == w3:
 					tri_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
-				bi_counts[w1.index(flat_text[i]),w2.index(flat_text[i+1])] += 1
 
-	ma, mi = -1.7976931348623157e+308,1.7976931348623157e+308
+	# ma, mi = -1.7976931348623157e+308,1.7976931348623157e+308
+	# vals = set([])
 	p = np.zeros((len(w1),len(w2)))
 	bigram_smooth = float(delta)*float(len(flat_text) + len(flat_text)**2)
+	# print bigram_smooth
+	# print np.amax(bi_counts)
 	for i in xrange(len(w1)):
 		for j in xrange(len(w2)):
 			p[i,j] = (float(tri_counts[i,j]) + float(delta)) / (float(bi_counts[i,j]) + bigram_smooth)
-			if p[i,j] > ma:
-				ma = p[i,j]
-			if p[i,j] < mi:
-				mi = p[i,j]
-	print 'max:', ma, 'min:', mi
+			# vals.add(p[i,j])
+			# if p[i,j] > ma:
+			# 	ma = p[i,j]
+			# if p[i,j] < mi:
+			# 	mi = p[i,j]
+	# print 'max:', ma, 'min:', mi
+	# print vals
 	return p
 
-def get_words_with_tags(flat_text_pos,max_per_tag=[],tags=[],include_pos=False):
+# @profile
+def bigram_p_pos(w1,w2,flat_text,delta=None):
+	uni_counts = np.zeros(len(w1))
+	w1_set = set(w1)
+	w2_set = set(w2)
+	stop = len(flat_text)-1
+	words = {}
+	lexicon = set([])
+	p = {}
+
+	#make dict out of word indicies
+	for i, w in enumerate(w2):
+		p[w] = np.zeros(len(w1))
+
+	for i in xrange(len(flat_text)):
+		lexicon.add(flat_text[i])
+		if i >= stop:
+			break
+		if flat_text[i] in w1_set:
+			uni_counts[w1.index(flat_text[i])] += 1
+			if flat_text[i+1] in w2_set:
+				p[flat_text[i+1]][w1.index(flat_text[i])] += 1
+
+	if delta != None:
+		for word in w2:
+			for i,val in enumerate(p[word]):
+				val = float(val+delta)/float(uni_counts[i] + (len(lexicon)*delta))
+	else:
+		for word in w2:
+			for i,val in enumerate(p[word]):
+				val = float(val)/float(uni_counts[i] + 1)
+
+	return p
+
+def unigram_p_pos(w1,flat_text,delta=None):
+	'''
+	takes a list of words w1 and calculates the unigrams for those words. retains ordering of the list w1.
+	'''
+	words = {}
+	for i,w in enumerate(w1):
+		words[w] = i
+
+	unigrams = np.zeros(len(w1))
+	lexicon = set([])
+	count = len(flat_text)
+	for word in flat_text:
+		lexicon.add(word)
+		try:
+			unigrams[words[word]] += 1
+		except Exception, e:
+			pass
+
+	if delta != None:
+		return ((unigrams+delta)/((len(lexicon)*delta)+count)).tolist()
+	else:
+		return (unigrams/count).tolist()
+
+def get_words_with_tags(flat_text_pos,max_per_tag=[],tags=[],include_pos=False,chars_to_remove=['.','_',',','[',']','(',')','--','*','=','`','/','1','2','3','4','5','6','7','8','9','0','+']):
 	'''
 	flat_text must include tuples with each word's POS tag
 	'''
@@ -211,18 +277,19 @@ def get_words_with_tags(flat_text_pos,max_per_tag=[],tags=[],include_pos=False):
 	for tag in tags:
 		words[tag] = set([])
 	for word in flat_text_pos:
-		if words.has_key(word[1]):
-			if include_pos:
-				words[word[1]].add(word)
-			else:
-				words[word[1]].add(word[0])
+		if not any(char in word[0] for char in chars_to_remove): #remove weird words
+			if words.has_key(word[1]):
+				if include_pos:
+					words[word[1]].add(word)
+				else:
+					words[word[1]].add(word[0])
 	
 	if len(max_per_tag) == len(tags) and type(max_per_tag) == list:
 		try:
 			for i, mpt in enumerate(max_per_tag):
 				words[tags[i]] = random.sample(words[tags[i]],mpt)
 		except ValueError, e:
-			print 'Not enough values for %s, only giving %i words instead of %i.'%(tags[i], len(words[tags[i]]), mpt)
+			# print 'Not enough values for %s, only giving %i words instead of %i.'%(tags[i], len(words[tags[i]]), mpt)
 			words[tags[i]] = words[tags[i]]
 			pass
 	else:
@@ -230,7 +297,7 @@ def get_words_with_tags(flat_text_pos,max_per_tag=[],tags=[],include_pos=False):
 			for tag in tags:
 				words[tag] = random.sample(words[tag],max_per_tag)
 		except ValueError, e:
-			print 'Not enough values for %s, only giving %i words instead of %i.'%(tag, len(words[tag]), max_per_tag)
+			# print 'Not enough values for %s, only giving %i words instead of %i.'%(tag, len(words[tag]), max_per_tag)
 			words[tag] = words[tag]
 			pass
 	
@@ -245,7 +312,7 @@ def get_words_with_tags(flat_text_pos,max_per_tag=[],tags=[],include_pos=False):
 
 def random_word(docs,num_words=50):
 	'''
-	either takes a dict loaded from load_from_file() or a flattened numpy array
+	either takes a dict loaded from load_from_file() or a flattened array
 	'''
 	if type(docs) is dict:
 		text = flatten_text(docs)

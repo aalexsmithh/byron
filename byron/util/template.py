@@ -1,5 +1,4 @@
 class doc_template(object):
-	"""docstring for template"""
 	def __init__(self):
 		super(doc_template, self).__init__()
 		self.pos = []
@@ -68,6 +67,18 @@ class sentence_template(object):
 		for i in xrange(self.length):
 			str_ret += '[%s %s]' % (self.template[i],self.pos[i])
 		return str_ret
+
+	def __iter__(self):
+		self.n = 0
+		return self
+
+	def next(self):
+		if self.n < self.length:
+			result = (self.template[self.n], self.pos[self.n])#, self.force[self.n])
+			self.n += 1
+			return result
+		else:
+			raise StopIteration
 
 	def add_pos(self,pos_sent):
 		self.pos = pos_sent

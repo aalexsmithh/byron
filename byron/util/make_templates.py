@@ -11,7 +11,7 @@ def _template_from_doc(doc,idf,tfidf):
 	a.make_template()
 	return a
 
-def make_template(docs,max_files=None ,max_len=15, min_X=3, prune=True):
+def make_template(docs, max_len=15, min_X=3, prune=True):
 	'''
 	docs must be the .pos files
 	'''
